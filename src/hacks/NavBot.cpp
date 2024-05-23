@@ -1422,6 +1422,16 @@ static slots getBestSlot(slots active_slot, std::pair<CachedEntity *, float> &ne
     switch (g_pLocalPlayer->clazz)
     {
     case tf_scout:
+    {
+        if (nearest.second > 450.0f && active_slot == secondary)
+            return active_slot;
+        if (nearest.second <= 300.0f && CheckMelee(nearest.first) && nearest.first->IsVisible())
+            return melee;
+        else if (nearest.second <= 550.0f)
+            return primary;
+        else
+            return secondary;
+    }
     case tf_heavy:
         return primary;
     case tf_medic:
