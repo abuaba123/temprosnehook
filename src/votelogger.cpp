@@ -10,6 +10,7 @@
 #include <settings/Bool.hpp>
 #include <cstdlib>
 #include <ctime>
+#include <random>
 #include "CatBot.hpp"
 #include "votelogger.hpp"
 
@@ -61,11 +62,13 @@ static const std::vector<std::string> friendly_f1 =
     "kick the cheater"
 };
 
-static std::string getRandomPhrase(const std::vector<std::string>& phrases) // blah blah blah seeding whatever (i dont know how to use mt19937)
+static std::string getRandomPhrase(const std::vector<std::string>& phrases)
 {
-    std::srand(std::time(nullptr));
-    int index = std::rand() % phrases.size();
-    return phrases[index];
+    static std::random_device rd;
+    static std::mt19937 gen(rd()); // actual good way to seed.
+
+    std::uniform_int_distribution<> dis(0, phrases.size() - 1);
+    return phrases[dis(gen)];
 }
 
 static void vote_rage_back()
@@ -114,9 +117,9 @@ void dispatchUserMessage(bf_read &buffer, int type)
     case 45:
     {
         // Vote setup Failed
-        int reason   = buffer.ReadByte();
+        int reason = buffer.ReadByte();
         int cooldown = buffer.ReadShort();
-        int delay    = 4;
+        int delay = 4;
 
         if (reason == 2) // VOTE_FAILED_RATE_EXCEEDED
             delay = cooldown;
@@ -127,10 +130,11 @@ void dispatchUserMessage(bf_read &buffer, int type)
     case 46:
     {
         // TODO: Add always vote no/vote no on friends. Cvar is "vote option2"
+        was_local_player_caller = false;
         was_local_player = false;
-        int team         = buffer.ReadByte();
-        int vote_id      = buffer.ReadLong();
-        int caller       = buffer.ReadByte();
+        int team = buffer.ReadByte();
+        int vote_id = buffer.ReadLong();
+        int caller = buffer.ReadByte();
         char reason[64];
         char name[64];
         buffer.ReadString(reason, 64, false, nullptr);
@@ -144,14 +148,13 @@ void dispatchUserMessage(bf_read &buffer, int type)
         player_info_s info{}, info2{};
         if (!GetPlayerInfo(target, &info) || !GetPlayerInfo(caller, &info2))
             break;
-        
+
         using namespace playerlist;
 
-        auto &pl             = AccessData(info.friendsID);
-        auto &pl_caller      = AccessData(info2.friendsID);
+        auto &pl = AccessData(info.friendsID);
+        auto &pl_caller = AccessData(info2.friendsID);
         bool friendly_kicked = pl.state != k_EState::RAGE && pl.state != k_EState::DEFAULT;
         bool friendly_caller = pl_caller.state != k_EState::RAGE && pl_caller.state != k_EState::DEFAULT;
-
 
         auto team_name = teamname(team);
         logging::Info("[%s] Vote called to kick %s [U:1:%u] for %s by %s [U:1:%u]", team_name, info.name, info.friendsID, reason, info2.name, info2.friendsID);
@@ -173,11 +176,6 @@ void dispatchUserMessage(bf_read &buffer, int type)
             local_kick_timer.update();
         }
 
-        if (friendly_caller && *legitmode)
-        {
-            chat_stack::Say(getRandomPhrase(friendly_f1).c_str());
-        }
-        
         if (info2.friendsID == g_ISteamUser->GetSteamID().GetAccountID())
         {
             if (*saywhenimkickingaskid)
@@ -194,24 +192,42 @@ void dispatchUserMessage(bf_read &buffer, int type)
             was_local_player_caller = true;
         }
 
+        if (friendly_caller && *legitmode && !was_local_player_caller)
+        {
+            chat_stack::Say(getRandomPhrase(friendly_f1).c_str());
+        }
+
         if (*vote_kickn || *vote_kicky)
         {
             if (*vote_kickn && friendly_kicked)
             {
-                vote_command = { strfmt("vote %d option2", vote_id).get(), 0 };  // Set the delay to 0
+                if (!legitmode)
+                    vote_command = { strfmt("vote %d option2", vote_id).get(), 0 }; // Set the delay to 0
+                else
+                {
+                    vote_command = { strfmt("vote %d option2", vote_id).get(), 1000u + (rand() % 5000) };
+                    vote_command.timer.update();
+                }
+
                 if (*vote_rage_vote && !friendly_caller)
                     pl_caller.state = k_EState::RAGE;
             }
             else if (*vote_kicky && !friendly_kicked)
             {
-                vote_command = { strfmt("vote %d option1", vote_id).get(), 0 };  // Set the delay to 0
+                if (!legitmode)
+                    vote_command = { strfmt("vote %d option1", vote_id).get(), 0 }; // Set the delay to 0
+                else
+                {
+                    vote_command = { strfmt("vote %d option1", vote_id).get(), 1000u + (rand() % 5000) };
+                    vote_command.timer.update();
+                }
             }
         }
         if (*chat_partysay)
         {
-            char formated_string[256];
-            std::snprintf(formated_string, sizeof(formated_string), "[ROSNEHOOK] [%s] votekick called: %s => %s (%s)", team_name, info2.name, info.name, reason);
-            re::CTFPartyClient::GTFPartyClient()->SendPartyChat(formated_string);
+            char formatted_string[256];
+            std::snprintf(formatted_string, sizeof(formatted_string), "[ROSNEHOOK] [%s] votekick called: %s => %s (%s)", team_name, info2.name, info.name, reason);
+            re::CTFPartyClient::GTFPartyClient()->SendPartyChat(formatted_string);
         }
 #if ENABLE_VISUALS
         if (*chat)
@@ -222,8 +238,6 @@ void dispatchUserMessage(bf_read &buffer, int type)
     case 47:
     {
         logging::Info("Vote passed");
-        // if (was_local_player && requeue)
-        //    tfmm::StartQueue();
         if (was_local_player_caller && micspam_after_vote)
             g_IEngine->ClientCmd_Unrestricted("-voicerecord");
         break;
