@@ -21,6 +21,7 @@ static settings::Boolean chat_partysay{ "votelogger.chat.partysay", "false" };
 static settings::Boolean chat_casts{ "votelogger.chat.casts", "false" };
 static settings::Boolean f2pleaseimnotbot{ "votelogger.f2please", "false" };
 static settings::Boolean legitmode{ "votelogger.legitmode", "false" };
+static settings::Boolean micspam_after_vote{ "votelogger.micspam-after-kick", "false" };
 static settings::Boolean saywhenimkickingaskid{ "votelogger.kicksay", "false" };
 static settings::Boolean chat_casts_f1_only{ "votelogger.chat.casts.f1-only", "true" };
 static settings::Boolean requeue_on_kick{ "votelogger.requeue-on-kick", "false" };
@@ -30,6 +31,7 @@ static settings::Boolean abandon_and_crash_on_kick{ "votelogger.restart-on-kick"
 namespace votelogger
 {
 static bool was_local_player{ false };
+static bool was_local_player_caller{ false };
 static Timer local_kick_timer{};
 
 static const std::vector<std::string> f2_phrases =
@@ -185,6 +187,11 @@ void dispatchUserMessage(bf_read &buffer, int type)
                 else
                     chat_stack::Say("f1 cheater/bot", true);
             }
+
+            if (micspam_after_vote)
+                g_IEngine->ClientCmd_Unrestricted("+voicerecord");
+
+            was_local_player_caller = true;
         }
 
         if (*vote_kickn || *vote_kicky)
@@ -217,12 +224,16 @@ void dispatchUserMessage(bf_read &buffer, int type)
         logging::Info("Vote passed");
         // if (was_local_player && requeue)
         //    tfmm::StartQueue();
+        if (was_local_player_caller && micspam_after_vote)
+            g_IEngine->ClientCmd_Unrestricted("-voicerecord");
         break;
     }
     case 48:
         logging::Info("Vote failed");
         if (was_local_player && requeue_on_kick)
             tfmm::LeaveQueue();
+        if (was_local_player_caller && micspam_after_vote)
+            g_IEngine->ClientCmd_Unrestricted("-voicerecord");
         break;
     case 49:
         logging::Info("VoteSetup?");
