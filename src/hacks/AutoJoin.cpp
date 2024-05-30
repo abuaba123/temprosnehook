@@ -97,7 +97,7 @@ static void Update()
 {
     static Timer join_timer{};
     
-    if (join_timer.test_and_set(750)) // 750 because if the bot joins too fast for some reason it doesn't get any items, like how it would be without item servers
+    if (join_timer.test_and_set(1000))
     {
         if (*autojoin_team && UnassignedTeam())
             hack::ExecuteCommand("autoteam");

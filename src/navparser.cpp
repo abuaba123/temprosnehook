@@ -1014,6 +1014,8 @@ public:
     void FireGameEvent(KeyValues *event) override
     {
         map->pather.Reset();
+        NavEngine::map.reset();
+        NavEngine::LevelInit();
     }
 };
 
