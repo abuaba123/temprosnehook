@@ -17,7 +17,7 @@ namespace playerlist
 std::unordered_map<unsigned, userdata> data{};
 
 const std::string k_Names[]                                     = { "DEFAULT", "FRIEND", "RAGE", "IPC", "TEXTMODE", "CAT", "ABUSE", "PARTY" };
-const char *const k_pszNames[]                                  = { "DEFAULT", "FRIEND", "RAGE", "IPC", "TEXTMODE", "CAT", "ABUSE", "PARTY" };
+const char *const k_pszNames[]                                  = { "DEFAULT", "FRIEND", "RAGE", "IPC", "TEXTMODE", "CAT", "ABUSE", "PARTY", "ABANDON" };
 const std::array<std::pair<k_EState, size_t>, 5> k_arrGUIStates = { std::pair(k_EState::DEFAULT, 0), { k_EState::FRIEND, 1 }, { k_EState::RAGE, 2 } };
 #if ENABLE_VISUALS
 std::array<rgba_t, 8> k_Colors = { colors::empty, colors::FromRGBA8(99, 226, 161, 255), colors::FromRGBA8(226, 204, 99, 255), colors::FromRGBA8(232, 134, 6, 255), colors::FromRGBA8(232, 134, 6, 255), colors::empty, colors::FromRGBA8(150, 75, 0, 255), colors::FromRGBA8(99, 226, 161, 255) };
@@ -142,9 +142,9 @@ bool IsDefault(unsigned steamid)
 {
     const userdata &data = AccessData(steamid);
 #if ENABLE_VISUALS
-    return data.state == k_EState::DEFAULT && !data.color.a;
+    return (data.state == k_EState::DEFAULT || data.state == k_EState::ABANDON) && !data.color.a;
 #endif
-    return data.state == k_EState::DEFAULT;
+    return data.state == k_EState::DEFAULT || data.state == k_EState::ABANDON;
 }
 
 bool IsFriend(unsigned steamid)
@@ -199,7 +199,7 @@ bool ChangeState(unsigned int steamid, k_EState state, bool force)
         else
             return false;
     case k_EState::DEFAULT:
-        if (state != k_EState::DEFAULT)
+        if (state != k_EState::DEFAULT && state != k_EState::ABANDON)
         {
             ChangeState(steamid, state, true);
             return true;

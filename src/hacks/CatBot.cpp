@@ -65,7 +65,7 @@ void do_random_votekick()
         }
 
         auto &pl = playerlist::AccessData(info.friendsID);
-        if (pl.state != playerlist::k_EState::RAGE && pl.state != playerlist::k_EState::DEFAULT)
+        if (pl.state != playerlist::k_EState::RAGE && pl.state != playerlist::k_EState::DEFAULT && pl.state != playerlist::k_EState::ABANDON)
         {
             continue;
         }
@@ -339,6 +339,11 @@ void update()
             }
             
             if (playerlist::AccessData(info.friendsID).state == playerlist::k_EState::CAT)
+            {
+                --count_total;
+            }
+
+            if (playerlist::AccessData(info.friendsID).state == playerlist::k_EState::ABANDON)
             {
                 --count_total;
             }

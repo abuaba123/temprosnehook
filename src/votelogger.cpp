@@ -153,8 +153,8 @@ void dispatchUserMessage(bf_read &buffer, int type)
 
         auto &pl = AccessData(info.friendsID);
         auto &pl_caller = AccessData(info2.friendsID);
-        bool friendly_kicked = pl.state != k_EState::RAGE && pl.state != k_EState::DEFAULT;
-        bool friendly_caller = pl_caller.state != k_EState::RAGE && pl_caller.state != k_EState::DEFAULT;
+        bool friendly_kicked = pl.state != k_EState::RAGE && pl.state != k_EState::DEFAULT && pl.state != k_EState::ABANDON;
+        bool friendly_caller = pl_caller.state != k_EState::RAGE && pl_caller.state != k_EState::DEFAULT && pl_caller.state != k_EState::ABANDON;
 
         auto team_name = teamname(team);
         logging::Info("[%s] Vote called to kick %s [U:1:%u] for %s by %s [U:1:%u]", team_name, info.name, info.friendsID, reason, info2.name, info2.friendsID);

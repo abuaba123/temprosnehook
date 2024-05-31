@@ -24,6 +24,7 @@ enum class k_EState
     CAT,
     ABUSE,
     PARTY,
+    ABANDON,
     STATE_LAST = PARTY
 };
 
@@ -55,7 +56,7 @@ void Load();
 
 constexpr bool IsFriendly(k_EState state)
 {
-    return state != k_EState::RAGE && state != k_EState::DEFAULT && state != k_EState::CAT && state != k_EState::ABUSE;
+    return state != k_EState::RAGE && state != k_EState::DEFAULT && state != k_EState::ABANDON && state != k_EState::CAT && state != k_EState::ABUSE;
 }
 
 #if ENABLE_VISUALS

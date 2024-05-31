@@ -58,7 +58,7 @@ bool shouldAlwaysRenderEspSteamId(unsigned id)
         return false;
 
     auto &pl = playerlist::AccessData(id);
-    if (pl.state != playerlist::k_EState::DEFAULT)
+    if (pl.state != playerlist::k_EState::DEFAULT && pl.state != playerlist::k_EState::ABANDON)
         return true;
     return false;
 }
