@@ -87,6 +87,17 @@ void BeginConVars()
         cat_matchexec.close();
     }
 
+    if (!std::ifstream("tf/cfg/abandonlist.cfg"))
+    {
+        std::ofstream abandonlist("tf/cfg/abandonlist.cfg", std::ios::out | std::ios::trunc);
+        if (abandonlist.good())
+            abandonlist << "// File used for adding people who you want to set as ABANDON, organization."
+                             "\n// This script will be executed EACH TIME "
+                             "YOU INJECT\n";
+
+        abandonlist.close();
+    }
+
     logging::Info(":b:");
     SetCVarInterface(g_ICvar);
 }

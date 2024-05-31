@@ -326,9 +326,11 @@ void hack::Initialize()
     hack::command_stack().emplace("exec cat_autoexec_textmode");
     hack::command_stack().emplace("exec betrayals");
     hack::command_stack().emplace("exec trusted");
+    hack::command_stack().emplace("exec abandonlist");
 #else
     hack::command_stack().emplace("exec cat_autoexec");
     hack::command_stack().emplace("exec trusted");
+    hack::command_stack().emplace("exec abandonlist");
 #endif
     auto extra_exec = std::getenv("CH_EXEC");
     if (extra_exec)
