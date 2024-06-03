@@ -19,6 +19,71 @@
 
 static settings::Boolean roll_speedhack{ "misc.roll-speedhack", "false" };
 static settings::Boolean forward_speedhack{ "misc.roll-speedhack.forward", "false" };
+settings::Boolean engine_pred{ "misc.engine-prediction", "true" };
+
+class CMoveData;
+namespace engine_prediction
+{
+static Vector original_origin;
+
+void RunEnginePrediction(IClientEntity *ent, CUserCmd *ucmd)
+{
+    if (!ent)
+        return;
+
+    typedef void (*SetupMoveFn)(IPrediction *, IClientEntity *, CUserCmd *, class IMoveHelper *, CMoveData *);
+    typedef void (*FinishMoveFn)(IPrediction *, IClientEntity *, CUserCmd *, CMoveData *);
+
+    void **predictionVtable = *(void ***) g_IPrediction;
+
+    auto oSetupMove  = (SetupMoveFn) (*(unsigned *) (predictionVtable + 19));
+    auto oFinishMove = (FinishMoveFn) (*(unsigned *) (predictionVtable + 20));
+    // CMoveData *pMoveData = (CMoveData*)(sharedobj::client->lmap->l_addr + 0x1F69C0C);  CMoveData movedata {};
+    auto object     = std::make_unique<char[]>(165);
+    auto *pMoveData = (CMoveData *) object.get();
+
+    // Backup
+    float frameTime = g_GlobalVars->frametime;
+    float curTime   = g_GlobalVars->curtime;
+    int tickcount   = g_GlobalVars->tickcount;
+    original_origin = ent->GetAbsOrigin();
+
+    CUserCmd defaultCmd{};
+    if (ucmd == nullptr)
+        ucmd = &defaultCmd;
+
+    // Set Usercmd for prediction
+    NET_VAR(ent, CURR_CUSERCMD_PTR, CUserCmd *) = ucmd;
+
+    // Set correct CURTIME
+    g_GlobalVars->curtime   = g_GlobalVars->interval_per_tick * NET_INT(ent, netvar.nTickBase);
+    g_GlobalVars->frametime = g_GlobalVars->interval_per_tick;
+    *g_PredictionRandomSeed = MD5_PseudoRandom(current_user_cmd->command_number) & 0x7FFFFFFF;
+
+    // Run The Prediction
+    g_IGameMovement->StartTrackPredictionErrors(reinterpret_cast<CBasePlayer *>(ent));
+    oSetupMove(g_IPrediction, ent, ucmd, nullptr, pMoveData);
+    g_IGameMovement->ProcessMovement(reinterpret_cast<CBasePlayer *>(ent), pMoveData);
+    oFinishMove(g_IPrediction, ent, ucmd, pMoveData);
+    g_IGameMovement->FinishTrackPredictionErrors(reinterpret_cast<CBasePlayer *>(ent));
+
+    // Reset User CMD
+    NET_VAR(ent, CURR_CUSERCMD_PTR, CUserCmd *) = nullptr;
+
+    g_GlobalVars->frametime = frameTime;
+    g_GlobalVars->curtime   = curTime;
+    g_GlobalVars->tickcount = tickcount;
+
+    // Adjust tickbase
+    NET_INT(ent, netvar.nTickBase)++;
+}
+// Restore Origin
+void FinishEnginePrediction(IClientEntity *ent, CUserCmd *ucmd)
+{
+    const_cast<Vector &>(ent->GetAbsOrigin()) = original_origin;
+    original_origin.Invalidate();
+}
+} // namespace engine_prediction
 
 void PrecalculateCanShoot()
 {
@@ -172,7 +237,7 @@ DEFINE_HOOKED_METHOD(CreateMove, bool, void *this_, float input_sample_time, CUs
     {
         if (!g_pLocalPlayer->life_state && CE_GOOD(LOCAL_W))
         {
-            // Catbot can leave game.
+            // Walkbot can leave game.
             if (!g_IEngine->IsInGame())
             {
                 g_Settings.is_create_move = false;
@@ -228,6 +293,12 @@ DEFINE_HOOKED_METHOD(CreateMove, bool, void *this_, float input_sample_time, CUs
 
     {
         EC::run(EC::CreateMove_NoEnginePred);
+
+        if (engine_pred)
+        {
+            engine_prediction::RunEnginePrediction(RAW_ENT(LOCAL_E), current_user_cmd);
+            g_pLocalPlayer->UpdateEye();
+        }
 
         if (hacks::warp::in_warp)
             EC::run(EC::CreateMoveWarp);
@@ -335,6 +406,10 @@ DEFINE_HOOKED_METHOD(CreateMoveInput, void, IInput *this_, int sequence_nr, floa
 
     // Run EC
     EC::run(EC::CreateMoveLate);
+
+    // Restore prediction
+    if (CE_GOOD(LOCAL_E) && engine_prediction::original_origin.IsValid())
+        engine_prediction::FinishEnginePrediction(RAW_ENT(LOCAL_E), current_late_user_cmd);
 
     // Write the usercmd
     WriteCmd(this_, current_late_user_cmd, sequence_nr);

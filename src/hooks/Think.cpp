@@ -1,11 +1,12 @@
 #include "HookedMethods.hpp"
 
+extern settings::Boolean engine_pred;
 namespace hooked_methods
 {
 // Update Prediction, Used by warp/Doubletap aswell
 void UpdatePred()
 {
-    if (isHackActive() && g_IEngine->IsInGame() && CE_GOOD(LOCAL_E))
+    if (isHackActive() && g_IEngine->IsInGame() && CE_GOOD(LOCAL_E) && engine_pred)
     {
         int signon_state        = *(int *) (*(unsigned *) &g_IBaseClientState + 304);
         int m_nDeltaTick        = *(int *) (*(unsigned *) &g_IBaseClientState + 408);

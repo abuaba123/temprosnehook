@@ -28,7 +28,7 @@ float backup_lerp = 0.0f;
 settings::Int fakelag_amount{ "misc.fakelag", "0" };
 settings::Boolean fakelag_midair{ "misc.fakelag-midair-only", "false" };
 settings::Boolean no_zoom{ "remove.zoom", "true" };
-settings::Boolean no_scope{ "remove.scope", "false" };
+settings::Boolean no_scope{ "remove.scope", "true" };
 settings::Boolean disable_visuals{ "visual.disable", "false" };
 settings::Int print_r{ "print.rgb.r", "183" };
 settings::Int print_g{ "print.rgb.b", "27" };
