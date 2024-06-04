@@ -14,6 +14,7 @@ set(files "${CMAKE_CURRENT_LIST_DIR}/AutoJoin.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/Misc.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/NavBot.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/Noisemaker.cpp"
+        "${CMAKE_CURRENT_LIST_DIR}/invitespam.cpp"
         "${CMAKE_CURRENT_LIST_DIR}/Warp.cpp")
 target_sources(cathook PRIVATE ${files})
 
