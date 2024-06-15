@@ -333,22 +333,7 @@ void update()
                 continue;
             }
 
-            if (playerlist::AccessData(info.friendsID).state == playerlist::k_EState::FRIEND)
-            {
-                --count_total;
-            }
-            
-            if (playerlist::AccessData(info.friendsID).state == playerlist::k_EState::CAT)
-            {
-                --count_total;
-            }
-
-            if (playerlist::AccessData(info.friendsID).state == playerlist::k_EState::ABANDON)
-            {
-                --count_total;
-            }
-
-            if (playerlist::AccessData(info.friendsID).state == playerlist::k_EState::IPC || playerlist::AccessData(info.friendsID).state == playerlist::k_EState::TEXTMODE || playerlist::AccessData(info.friendsID).state == playerlist::k_EState::CAT || playerlist::AccessData(info.friendsID).state == playerlist::k_EState::FRIEND)
+            if (playerlist::AccessData(info.friendsID).state == playerlist::k_EState::IPC || playerlist::AccessData(info.friendsID).state == playerlist::k_EState::TEXTMODE || playerlist::AccessData(info.friendsID).state == playerlist::k_EState::CAT || playerlist::AccessData(info.friendsID).state == playerlist::k_EState::FRIEND || playerlist::AccessData(info.friendsID).state == playerlist::k_EState::ABANDON)
             {
                 ipc_list.push_back(info.friendsID);
                 ++count_ipc;
