@@ -3,9 +3,9 @@
 namespace hacks::invitespam
 {
 
-static settings::Boolean enabled("invitespam.enable", "true");
+static settings::Boolean enabled("invitespam.enable", "false");
 static settings::Int steamid("invitespam.target", "1300269797");
-static settings::Int invtime{ "invitespam.invtime", "100" }; // Adjust this if you want to freeze or lag someone's game.
+static settings::Int invtime{ "invitespam.invtime", "400" }; // Adjust this if you want to freeze or lag someone's game.
 
 static Timer invtimer{};
 static void Paint()
