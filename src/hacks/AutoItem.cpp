@@ -150,7 +150,18 @@ static bool equipItem(int clazz, int slot, int id, bool get = true, bool allowRe
     }
     auto item_view = inv->GetFirstItemOfItemDef(id);
     if (item_view)
-        return invmng->EquipItemInLoadout(clazz, slot, item_view->UUID());
+    {
+        // check if validddddddd
+        if (item_view->UUID())
+        {
+            return invmng->EquipItemInLoadout(clazz, slot, item_view->UUID());
+        }
+        else
+        {
+            Debug("Invalid UUID for item %i", id);
+            return false;
+        }
+    }
 
     return false;
 }
